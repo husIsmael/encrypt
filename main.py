@@ -1,42 +1,64 @@
-def add(x, y):
-    return x + y
+from Crypto.Cipher import AES
+import base64
+import os
 
-def subtract(x, y):
-    return x - y
+def pad(s):
+    return s + (AES.block_size - len(s) % AES.block_size) * chr(AES.block_size - len(s) % AES.block_size)
 
-def multiply(x, y):
-    return x * y
+def unpad(s):
+    return s[:-ord(s[len(s)-1:])]
 
-def divide(x, y):
-    if y == 0:
-        return "Error! Division by zero."
-    return x / y
+def encrypt(raw, key):
+    try:
+        raw = pad(raw)
+        iv = os.urandom(AES.block_size)
+        cipher = AES.new(key.encode('utf-8'), AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw.encode('utf-8'))).decode('utf-8')
+    except Exception as e:
+        print(f"Encryption error: {e}")
+        raise
+
+def decrypt(enc, key):
+    try:
+        enc = base64.b64decode(enc)
+        iv = enc[:AES.block_size]
+        cipher = AES.new(key.encode('utf-8'), AES.MODE_CBC, iv)
+        return unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        raise
 
 def main():
-   while True:
-    print("Select operation:")
-    print("1. Add")
-    print("2. Subtract")
-    print("3. Multiply")
-    print("4. Divide")
+    while True:
+        key = input("Enter encryption key (16/24/32 characters): ").strip()
+        print(f"Captured key: '{key}'")  # Debug print to show the exact input
+        print(f"Key length: {len(key)}")  # Debug print
+        if len(key) not in [16, 24, 32]:
+            print("Invalid key length. Please enter a key of length 16, 24, or 32 characters.")
+            continue
+        break
 
-    choice = input("Enter choice(1/2/3/4): ")
+    while True:
+        print("Select operation:")
+        print("1. Encrypt")
+        print("2. Decrypt")
 
-    if choice in ['1', '2', '3', '4']:
-        num1 = float(input("Enter first number: "))
-        num2 = float(input("Enter second number: "))
+        choice = input("Enter choice(1/2): ")
 
         if choice == '1':
-            print(f"{num1} + {num2} = {add(num1, num2)}")
+            plaintext = input("Enter text to encrypt: ")
+            encrypted = encrypt(plaintext, key)
+            print(f"Encrypted text: {encrypted}")
         elif choice == '2':
-            print(f"{num1} - {num2} = {subtract(num1, num2)}")
-        elif choice == '3':
-            print(f"{num1} * {num2} = {multiply(num1, num2)}")
-        elif choice == '4':
-            print(f"{num1} / {num2} = {divide(num1, num2)}")
-    else:
-        print("Invalid input")
-        continue
+            encrypted = input("Enter text to decrypt: ")
+            try:
+                decrypted = decrypt(encrypted, key)
+                print(f"Decrypted text: {decrypted}")
+            except Exception as e:
+                print(f"Error: {e}")
+        else:
+            print("Invalid input")
+            continue
 
 if __name__ == "__main__":
     main()
