@@ -1,0 +1,6 @@
+# List your project dependencies here
+# For example:
+# numpy==1.21.2
+# pandas==1.3.3
+pycryptodome==3.10.1
+base64
